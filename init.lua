@@ -2,6 +2,7 @@ creeper = {}
 local attack_speed = 3
 local walk_speed = 1.5
 local animation_speed = 30
+local animation_speed_mod = 30
 local ANIM_STAND = 1
 local ANIM_WALK  = 2
 local damage = 2
@@ -218,7 +219,7 @@ minetest.register_entity("creeper:creeper",{
 							end
 						end
 						local NPC = self.object:getpos()
-						PLAYER = object:getpos()
+						local PLAYER = object:getpos()
 						self.vec = {x=PLAYER.x-NPC.x, y=PLAYER.y-NPC.y, z=PLAYER.z-NPC.z}
 						self.yaw = math.atan(self.vec.z/self.vec.x)+math.pi^2
 						if PLAYER.x > NPC.x then

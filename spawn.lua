@@ -40,4 +40,4 @@ function creeper:register_spawn(name,nodes,max_light,min_light,chance,active_obj
 		end
 	})
 end
-creeper:register_spawn("creeper:creeper",{"default:dirt_with_grass"},5,-1,10000,5,31000)
+creeper:register_spawn("creeper:creeper",{"default:dirt_with_grass"},5,-1,6000,5,31000)
