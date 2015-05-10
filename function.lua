@@ -163,9 +163,8 @@ function creeper_action(self, dtime)
 						creeper_boom(self.object:getpos())
 						minetest.sound_play("tnt_explode", {pos=self.object:getpos(), gain=1.5, max_hear_distance=2*64})
 					end
-					local name = object:get_player_name()
-					if minetest.get_modpath("mobtalker") then
-						if creeper_love[name] <= 0 and creeper_talking[name] ~= true then
+					if minetest.get_modpath("mobtalker") and creeper_love[self] ~= nil then
+						if creeper_love[self] <= 0 then
 							self.chase = true
 						end
 					else

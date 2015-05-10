@@ -2,7 +2,6 @@ creeper = {}
 local damage = 2
 if minetest.get_modpath("mobtalker") then
 	creeper_talk = {}
-	creeper_talking = {}
 	creeper_love = {}
 end
 dofile(minetest.get_modpath("creeper").."/function.lua")
@@ -46,9 +45,8 @@ minetest.register_entity("creeper:creeper",{
 		})
 	end,
 	on_rightclick = function(self,clicker)
-		if minetest.get_modpath("mobtalker") and clicker:get_wielded_item():get_name() == "mobtalker:mobtalker" then
-			mobtalker_creeper(self,clicker)
-		elseif minetest.setting_getbool("creative_mode") then
+		if minetest.get_modpath("mobtalker") and clicker:get_wielded_item():get_name() == "mobtalker:mobtalker"
+		or minetest.get_modpath("mobtalker") and minetest.setting_getbool("creative_mode") then
 			mobtalker_creeper(self,clicker)
 		end
 	end,
@@ -56,16 +54,18 @@ minetest.register_entity("creeper:creeper",{
 		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
 		self.object:set_hp(self.object:get_hp()-damage)
 		if minetest.get_modpath("mobtalker") then
-			creeper_talking[puncher:get_player_name()] = false
-			creeper_love[puncher:get_player_name()] = creeper_love[puncher:get_player_name()] - 1
+			if creeper_love[self] > 0 then
+				creeper_love[self] = creeper_love[self] - 1
+			end
 		end
 	end,
 	on_step = function(self, dtime)
 		if minetest.get_modpath("mobtalker") then
+			if creeper_love[self] == nil then
+				creeper_love[self] = 0
+			end
 			if not creeper_talk[self] then
 				creeper_action(self, dtime)
-			else
-				self.object:set_animation({x=self.anim.stand_START,y=self.anim.stand_END},30,0)
 			end
 		else
 			creeper_action(self, dtime)
