@@ -1,18 +1,13 @@
 creeper = {}
 local damage = 2
-if minetest.get_modpath("mobtalker") then
-	creeper_talk = {}
-	creeper_love = {}
-end
 dofile(minetest.get_modpath("creeper").."/function.lua")
-
 -- entity setting
 minetest.register_entity("creeper:creeper",{
 	hp_max = 20,
 	physical = true,
 	collisionbox = {-0.3,-0.7,-0.3, 0.3,0.8,0.3},
 	visual = "mesh",
-	mesh = "creeper.b3d",
+	mesh = "character.b3d",
 	player_anim = 0,
 	timer = 0,
 	turn_timer = 0,
@@ -32,7 +27,9 @@ minetest.register_entity("creeper:creeper",{
 	turn = false,
 	chase = false,
 	hiss = false,
-	on_activate = function(self)
+	love = nil,
+	talk = nil,
+	on_activate = function(self,staticdata)
 		self.anim = creeper_get_animation()
 		self.object:setacceleration({x=0,y=-10,z=0})
 		self.state = math.random(1,2)
@@ -43,6 +40,14 @@ minetest.register_entity("creeper:creeper",{
 			textures = {"creeper.png"},
 			visual_size = {x=1, y=1},
 		})
+		if minetest.get_modpath("mobtalker") then
+			local data = core.deserialize(staticdata)
+			if data and type(data) == "table" then
+				self.love = data.love
+			else
+				self.love = 0
+			end
+		end
 	end,
 	on_rightclick = function(self,clicker)
 		if minetest.get_modpath("mobtalker") and clicker:get_wielded_item():get_name() == "mobtalker:mobtalker"
@@ -54,21 +59,26 @@ minetest.register_entity("creeper:creeper",{
 		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
 		self.object:set_hp(self.object:get_hp()-damage)
 		if minetest.get_modpath("mobtalker") then
-			if creeper_love[self] > 0 then
-				creeper_love[self] = creeper_love[self] - 1
+			if self.love > 0 then
+				self.love = self.love - 1
 			end
 		end
 	end,
 	on_step = function(self, dtime)
 		if minetest.get_modpath("mobtalker") then
-			if creeper_love[self] == nil then
-				creeper_love[self] = 0
-			end
-			if not creeper_talk[self] then
+			if not self.talk then
 				creeper_action(self, dtime)
 			end
 		else
 			creeper_action(self, dtime)
+		end
+	end,
+	get_staticdata = function(self)
+		if minetest.get_modpath("mobtalker") then
+			local love = self.love
+			return core.serialize({
+				love = love
+			})
 		end
 	end,
 })

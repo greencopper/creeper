@@ -15,6 +15,7 @@ function creeper_action(self, dtime)
 	local attack_speed = 3
 	local walk_speed = 1.5
 	local damage = 2
+	local jump_y = 5
 	self.timer = self.timer + 0.01
 	self.turn_timer = self.turn_timer + 0.01
 	self.jump_timer = self.jump_timer + 0.01
@@ -163,8 +164,8 @@ function creeper_action(self, dtime)
 						creeper_boom(self.object:getpos())
 						minetest.sound_play("tnt_explode", {pos=self.object:getpos(), gain=1.5, max_hear_distance=2*64})
 					end
-					if minetest.get_modpath("mobtalker") and creeper_love[self] ~= nil then
-						if creeper_love[self] <= 0 then
+					if minetest.get_modpath("mobtalker") and self.love ~= nil then
+						if self.love <= 0 then
 							self.chase = true
 						end
 					else
@@ -202,12 +203,23 @@ function creeper_action(self, dtime)
 					end
 					--jump over obstacles
 					if self.jump_timer > 0.3 then
-						if minetest.env:get_node({x=self.object:getpos().x + self.direction.x,y=self.object:getpos().y-1,z=self.object:getpos().z + self.direction.z}).name ~= "air" then
-							self.object:setvelocity({x=self.object:getvelocity().x,y=5,z=self.object:getvelocity().z})
-							self.jump_timer = 0
+						self.jump_timer = 0
+						local p = {x=NPC.x + self.direction.x,y=NPC.y,z=NPC.z + self.direction.z}
+						local n = minetest.get_node_or_nil(p)
+						p.y = p.y+1
+						local n2 = minetest.get_node_or_nil(p)
+						local def = nil
+						local def2 = nil
+						if n and n.name then
+							def = minetest.registered_items[n.name]
+						end
+						if n2 and n2.name then
+							def2 = minetest.registered_items[n2.name]
+						end
+						if def and def.walkable and def2 and not def2.walkable and not def.groups.fences and n.name ~= "default:fence_wood" then
+							self.object:setvelocity({x=self.object:getvelocity().x*2.2,y=jump_y,z=self.object:getvelocity().z*2.2})
 						end
 					end
-				--return
 				end
 			elseif not object:is_player() then
 				self.state = 1
