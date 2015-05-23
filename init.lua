@@ -65,12 +65,12 @@ minetest.register_entity("creeper:creeper",{
 	end,
 	on_rightclick = function(self,clicker)
 		if minetest.get_modpath("mobtalker") then
-			mobtalker_rightclick(self,clicker)
+			mobtalker_rightclick(self,clicker,"creeper")
 		end
 	end,
 	get_staticdata = function(self)
 		if minetest.get_modpath("mobtalker") then
-			mobtalker_savestatic(self)
+			return mobtalker_savestatic(self)
 		end
 	end,
 })
