@@ -27,8 +27,11 @@ minetest.register_entity("creeper:creeper",{
 	turn = false,
 	chase = false,
 	hiss = false,
-	love = nil,
-	talk = nil,
+	-- MobTalker
+	love = {},
+	count = {},
+	route = {},
+	talk = false,
 	on_activate = function(self,staticdata)
 		self.anim = creeper_get_animation()
 		self.object:setacceleration({x=0,y=-10,z=0})
@@ -41,27 +44,7 @@ minetest.register_entity("creeper:creeper",{
 			visual_size = {x=1, y=1},
 		})
 		if minetest.get_modpath("mobtalker") then
-			local data = core.deserialize(staticdata)
-			if data and type(data) == "table" then
-				self.love = data.love
-			else
-				self.love = 0
-			end
-		end
-	end,
-	on_rightclick = function(self,clicker)
-		if minetest.get_modpath("mobtalker") and clicker:get_wielded_item():get_name() == "mobtalker:mobtalker"
-		or minetest.get_modpath("mobtalker") and minetest.setting_getbool("creative_mode") then
-			mobtalker_creeper(self,clicker)
-		end
-	end,
-	on_punch = function(self,puncher)
-		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
-		self.object:set_hp(self.object:get_hp()-damage)
-		if minetest.get_modpath("mobtalker") then
-			if self.love > 0 then
-				self.love = self.love - 1
-			end
+			mobtalker_setstatic(self,staticdata)
 		end
 	end,
 	on_step = function(self, dtime)
@@ -73,12 +56,21 @@ minetest.register_entity("creeper:creeper",{
 			creeper_action(self, dtime)
 		end
 	end,
+	on_punch = function(self,puncher)
+		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
+		self.object:set_hp(self.object:get_hp()-damage)
+		if minetest.get_modpath("mobtalker") then
+			mobtalker_punch(self,puncher)
+		end
+	end,
+	on_rightclick = function(self,clicker)
+		if minetest.get_modpath("mobtalker") then
+			mobtalker_rightclick(self,clicker)
+		end
+	end,
 	get_staticdata = function(self)
 		if minetest.get_modpath("mobtalker") then
-			local love = self.love
-			return core.serialize({
-				love = love
-			})
+			mobtalker_savestatic(self)
 		end
 	end,
 })
