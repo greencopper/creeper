@@ -1,6 +1,10 @@
 creeper = {}
+
 local damage = 2
+local mobtalker_mod = minetest.get_modpath("mobtalker")
+
 dofile(minetest.get_modpath("creeper").."/function.lua")
+
 -- entity setting
 minetest.register_entity("creeper:creeper",{
 	hp_max = 20,
@@ -43,12 +47,13 @@ minetest.register_entity("creeper:creeper",{
 			textures = {"creeper.png"},
 			visual_size = {x=1, y=1},
 		})
-		if minetest.get_modpath("mobtalker") then
-			mobtalker_setstatic(self,staticdata)
+		if mobtalker_mod then
+			mobtalker.setstatic(self,staticdata)
+			mobtalker.register_name("creeper","Cupa")
 		end
 	end,
 	on_step = function(self, dtime)
-		if minetest.get_modpath("mobtalker") then
+		if mobtalker_mod then
 			if not self.talk then
 				creeper_action(self, dtime)
 			end
@@ -59,20 +64,23 @@ minetest.register_entity("creeper:creeper",{
 	on_punch = function(self,puncher)
 		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
 		self.object:set_hp(self.object:get_hp()-damage)
-		if minetest.get_modpath("mobtalker") then
-			mobtalker_punch(self,puncher)
+		if mobtalker_mod then
+			mobtalker.punch(self,puncher)
 		end
 	end,
 	on_rightclick = function(self,clicker)
-		if minetest.get_modpath("mobtalker") then
-			mobtalker_rightclick(self,clicker,"creeper")
+		if mobtalker_mod then
+			mobtalker.rightclick(self,clicker,"creeper","mobtalker_creeper")
 		end
 	end,
 	get_staticdata = function(self)
-		if minetest.get_modpath("mobtalker") then
-			return mobtalker_savestatic(self)
+		if mobtalker_mod then
+			return mobtalker.savestatic(self)
 		end
 	end,
 })
 dofile(minetest.get_modpath("creeper").."/item.lua")
 dofile(minetest.get_modpath("creeper").."/spawn.lua")
+if mobtalker_mod then
+	dofile(minetest.get_modpath("creeper").."/mobtalker.lua")
+end

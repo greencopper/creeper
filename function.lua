@@ -159,11 +159,6 @@ function creeper_action(self, dtime)
 		for  _,object in ipairs(minetest.env:get_objects_inside_radius(self.object:getpos(), 2)) do
 			if object:is_player() then
 				if object:get_hp() > 0 then
-					if self.visualx >= 2 then
-						self.object:remove()
-						creeper_boom(self.object:getpos())
-						minetest.sound_play("tnt_explode", {pos=self.object:getpos(), gain=1.5, max_hear_distance=2*64})
-					end
 					local o = object:get_player_name()
 					if minetest.get_modpath("mobtalker") and self.love[o] ~= nil then
 						if self.love[o] <= 0 then
@@ -172,10 +167,15 @@ function creeper_action(self, dtime)
 					else
 						self.chase = true
 					end
+					if self.visualx >= 2 then
+						self.object:remove()
+						creeper_boom(self.object:getpos())
+						minetest.sound_play("tnt_explode", {pos=self.object:getpos(), gain=1.5, max_hear_distance=2*64})
+					end
 				end
 			end
 		end
-		for  _,object in ipairs(minetest.env:get_objects_inside_radius(self.object:getpos(), 12)) do
+		for  _,object in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 12)) do
 			if object:is_player() then
 				if object:get_hp() > 0 then
 					for _,object in ipairs(minetest.env:get_objects_inside_radius(self.object:getpos(), 2)) do
@@ -222,7 +222,7 @@ function creeper_action(self, dtime)
 						end
 					end
 				end
-			elseif not object:is_player() then
+			else
 				self.state = 1
 			end
 		end
