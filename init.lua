@@ -2,6 +2,9 @@ creeper = {}
 
 local damage = 2
 local mobtalker_mod = minetest.get_modpath("mobtalker")
+if mobtalker_mod then
+	mobtalker.register_name("creeper","Cupa")
+end
 
 dofile(minetest.get_modpath("creeper").."/function.lua")
 
@@ -49,7 +52,6 @@ minetest.register_entity("creeper:creeper",{
 		})
 		if mobtalker_mod then
 			mobtalker.setstatic(self,staticdata)
-			mobtalker.register_name("creeper","Cupa")
 		end
 	end,
 	on_step = function(self, dtime)
@@ -81,6 +83,3 @@ minetest.register_entity("creeper:creeper",{
 })
 dofile(minetest.get_modpath("creeper").."/item.lua")
 dofile(minetest.get_modpath("creeper").."/spawn.lua")
-if mobtalker_mod then
-	dofile(minetest.get_modpath("creeper").."/mobtalker.lua")
-end
