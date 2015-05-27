@@ -296,7 +296,11 @@ local function destroy(drops, pos, cid)
 		return
 	end
 	local def = cid_data[cid]
-	minetest.dig_node(pos)
+	if def and def.on_blast then
+		def.on_blast(vector.new(pos), 1)
+		return
+	end
+	minetest.remove_node(pos)
 	if def then
 		local node_drops = minetest.get_node_drops(def.name, "")
 		for _, item in ipairs(node_drops) do
