@@ -160,7 +160,7 @@ function creeper_action(self, dtime)
 			if object:is_player() then
 				if object:get_hp() > 0 then
 					local o = object:get_player_name()
-					if minetest.get_modpath("mobtalker") and self.love[o] ~= nil then
+					if mobtalker and self.love[o] ~= nil then
 						if self.love[o] <= 0 then
 							self.chase = true
 						end
