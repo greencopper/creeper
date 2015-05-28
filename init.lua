@@ -1,8 +1,7 @@
 creeper = {}
 
 local damage = 2
-local mobtalker_mod = minetest.get_modpath("mobtalker")
-if mobtalker_mod then
+if mobtalker then
 	mobtalker.register_name("creeper","Cupa")
 end
 
@@ -50,12 +49,12 @@ minetest.register_entity("creeper:creeper",{
 			textures = {"creeper.png"},
 			visual_size = {x=1, y=1},
 		})
-		if mobtalker_mod then
+		if mobtalker then
 			mobtalker.setstatic(self,staticdata)
 		end
 	end,
 	on_step = function(self, dtime)
-		if mobtalker_mod then
+		if mobtalker then
 			if not self.talk then
 				creeper_action(self, dtime)
 			end
@@ -66,17 +65,17 @@ minetest.register_entity("creeper:creeper",{
 	on_punch = function(self,puncher)
 		minetest.sound_play("creeper_hurt", {pos=self.object:getpos(), gain=1.5, max_hear_distance=6})
 		self.object:set_hp(self.object:get_hp()-damage)
-		if mobtalker_mod then
+		if mobtalker then
 			mobtalker.punch(self,puncher)
 		end
 	end,
 	on_rightclick = function(self,clicker)
-		if mobtalker_mod then
+		if mobtalker then
 			mobtalker.rightclick(self,clicker,"creeper","mobtalker_creeper")
 		end
 	end,
 	get_staticdata = function(self)
-		if mobtalker_mod then
+		if mobtalker then
 			return mobtalker.savestatic(self)
 		end
 	end,
