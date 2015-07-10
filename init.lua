@@ -6,7 +6,7 @@ dofile(minetest.get_modpath("creeper").."/spawn.lua")
 local def = {
 	hp_max = 20,
 	physical = true,
-	collisionbox = {-0.3,-0.7,-0.3, 0.3,0.8,0.3},
+	collisionbox = {-0.25,-0.7,-0.25, 0.25,0.8,0.25},
 	visual = "mesh",
 	mesh = "character.b3d",
 	textures = {"creeper.png"},
@@ -22,7 +22,8 @@ local def = {
 	},
 	walk_speed = 1.5,
 	jump_height = 5,
-	animation_speed = 30
+	animation_speed = 30,
+	knockback_level = 2
 }
 
 def.on_activate = function(self,staticdata)
@@ -30,6 +31,7 @@ def.on_activate = function(self,staticdata)
 	self.anim = 1
 	self.timer = 0
 	self.visualx = 1
+	self.knockback = false
 	self.turn_timer = 0
 	self.turn_speed = 0
 	self.state = math.random(1,2)
@@ -39,6 +41,9 @@ def.on_activate = function(self,staticdata)
 end
 
 def.on_step = function(self, dtime)
+	if self.knockback then
+		return
+	end
 	local ANIM_STAND = 1
 	local ANIM_WALK  = 2
 	
@@ -264,6 +269,17 @@ def.on_step = function(self, dtime)
 		end
 	else
 		self.object:setacceleration({x=0,y=-10,z=0})
+	end
+end
+
+def.on_punch = function(self, puncher, tflp, tool_capabilities, dir)
+	if self.knockback == false then
+		local knockback_level = self.knockback_level
+		self.object:setvelocity({x=dir.x*knockback_level,y=3,z=dir.z*knockback_level})
+		self.knockback = true
+		minetest.after(0.6,function()
+			self.knockback = false
+		end)
 	end
 end
 
