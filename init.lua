@@ -162,10 +162,26 @@ def.on_step = function(self, dtime)
 		-- Jump
 		if self.direction ~= nil then
 			local direction = self.direction
-			local npos = {x=pos.x+direction.x,y=pos.y-0.35,z=pos.z+direction.z}
-			if minetest.registered_nodes[minetest.get_node(npos).name].walkable then
-				local velocity = self.object:getvelocity()
-				self.object:setvelocity({x=velocity.x,y=self.jump_height,z=velocity.z})
+			local velocity = self.object:getvelocity()
+			local spos = {x=pos.x+direction.x,y=pos.y,z=pos.z+direction.z}
+			local node = minetest.get_node_or_nil(spos)
+			spos.y = spos.y+1
+			local node2 = minetest.get_node_or_nil(spos)
+			local def,def2 = {}
+			if node and node.name then
+				def = minetest.registered_items[node.name]
+			end
+			if node2 and node2.name then
+				def2 = minetest.registered_items[node2.name]
+			end
+			if def and def.walkable
+			and def2 and not def2.walkable
+			and def.drawtype ~= "fencelike" then
+				self.object:setvelocity({
+					x=velocity.x*2.2,
+					y=self.jump_height,
+					z=velocity.z*2.2
+				})
 			end
 		end
 	end
