@@ -5,6 +5,11 @@ dofile(minetest.get_modpath("creeper").."/spawn.lua")
 
 local function jump(self,pos,direction)
 	local velocity = self.object:getvelocity()
+	if minetest.registered_nodes[minetest.get_node(pos).name].climbable then
+		self.object:setvelocity({x=velocity.x,y=4,z=velocity.z})
+		return
+	end
+	
 	local spos = {x=pos.x+direction.x,y=pos.y,z=pos.z+direction.z}
 	local node = minetest.get_node_or_nil(spos)
 	spos.y = spos.y+1
@@ -24,9 +29,6 @@ local function jump(self,pos,direction)
 			y=self.jump_height,
 			z=velocity.z*2.2
 		})
-	end
-	if minetest.registered_nodes[minetest.get_node(pos).name].climbable then
-		self.object:setvelocity({x=velocity.x,y=4,z=velocity.z})
 	end
 end
 
@@ -84,6 +86,13 @@ def.on_activate = function(self,staticdata)
 		self.object:set_properties({textures = {"creeper_powered.png"}})
 	else
 		self.powered = false
+	end
+	
+	if staticdata then
+		local data = minetest.deserialize(staticdata)
+		if data.powered then
+			self.powered = data.powered
+		end
 	end
 end
 
@@ -301,6 +310,12 @@ def.on_punch = function(self,puncher,time_from_last_punch,tool_capabilities,dir)
 		end
 		local obj = minetest.add_item(p, {name="tnt:gunpowder",count=math.random(0,2)})
 	end
+end
+
+def.get_staticdata = function(self)
+	return minetest.serialize({
+		powered = self.powered
+	})
 end
 
 minetest.register_entity("creeper:creeper",def)
