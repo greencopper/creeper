@@ -77,21 +77,21 @@ def.on_activate = function(self,staticdata)
 	self.jump_timer = 0
 	self.turn_timer = 0
 	self.turn_speed = 0
+	self.powered = false
 	self.knockback = false
 	self.state = math.random(1,2)
 	self.old_y = self.object:getpos().y
 	
-	if math.random(0,20) == 20 then
-		self.powered = true
-		self.object:set_properties({textures = {"creeper_powered.png"}})
+	local data = minetest.deserialize(staticdata)
+	if data and type(data) == "table" then
+		if data.powered == true then
+			self.powered = true
+			self.object:set_properties({textures = {"creeper_powered.png"}})
+		end
 	else
-		self.powered = false
-	end
-	
-	if staticdata then
-		local data = minetest.deserialize(staticdata)
-		if data.powered then
-			self.powered = data.powered
+		if math.random(0,20) == 20 then
+			self.powered = true
+			self.object:set_properties({textures = {"creeper_powered.png"}})
 		end
 	end
 end
