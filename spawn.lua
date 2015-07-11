@@ -1,5 +1,5 @@
 minetest.register_abm({
-	nodenames = {"default:dirt_with_grass"},
+	nodenames = {"default:dirt_with_grass","default:stone"},
 	neighbors = {"air"},
 	interval = 30,
 	chance = 9000,

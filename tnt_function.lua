@@ -1,6 +1,7 @@
 -- From TNT
 local cid_data = {}
 local radius = tonumber(minetest.setting_get("tnt_radius") or 3)
+local large_radius = 5
 local loss_prob = {
 	["default:cobble"] = 3,
 	["default:dirt"] = 4,
@@ -179,7 +180,11 @@ local function explode(pos, radius)
 	return drops
 end
 
-function creeper.boom(pos)
+function creeper.boom(pos,large)
+	local radius = radius
+	if large then
+		radius = large_radius
+	end
 	minetest.sound_play("creeper_explode", {pos=pos, gain=1.5, max_hear_distance=2*64})
 	minetest.set_node(pos, {name="tnt:boom"})
 	minetest.get_node_timer(pos):start(0.5)

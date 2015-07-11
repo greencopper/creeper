@@ -3,6 +3,48 @@ creeper = {}
 dofile(minetest.get_modpath("creeper").."/tnt_function.lua")
 dofile(minetest.get_modpath("creeper").."/spawn.lua")
 
+local function jump(self,pos,direction)
+	local velocity = self.object:getvelocity()
+	local spos = {x=pos.x+direction.x,y=pos.y,z=pos.z+direction.z}
+	local node = minetest.get_node_or_nil(spos)
+	spos.y = spos.y+1
+	local node2 = minetest.get_node_or_nil(spos)
+	local def,def2 = {}
+	if node and node.name then
+		def = minetest.registered_items[node.name]
+	end
+	if node2 and node2.name then
+		def2 = minetest.registered_items[node2.name]
+	end
+	if def and def.walkable
+	and def2 and not def2.walkable
+	and def.drawtype ~= "fencelike" then
+		self.object:setvelocity({
+			x=velocity.x*2.2,
+			y=self.jump_height,
+			z=velocity.z*2.2
+		})
+	end
+	if minetest.registered_nodes[minetest.get_node(pos).name].climbable then
+		self.object:setvelocity({x=velocity.x,y=3,z=velocity.z})
+	end
+end
+
+local function random_turn(self)
+	if self.turn_timer > math.random(2,5) then
+		local select_turn = math.random(1,3)
+		if select_turn == 1 then
+			self.turn = "left"
+		elseif select_turn == 2 then
+			self.turn = "right"
+		elseif select_turn == 3 then
+			self.turn = "straight"
+		end
+		self.turn_timer = 0
+		self.turn_speed = 0.05*math.random()
+	end
+end
+
 local def = {
 	hp_max = 20,
 	physical = true,
@@ -30,46 +72,49 @@ def.on_activate = function(self,staticdata)
 	self.anim = 1
 	self.timer = 0
 	self.visualx = 1
-	self.knockback = false
+	self.jump_timer = 0
 	self.turn_timer = 0
 	self.turn_speed = 0
+	self.knockback = false
 	self.state = math.random(1,2)
+	self.old_y = self.object:getpos().y
 	
-	local obj = self.object
-	obj:setacceleration({x=0,y=-10,z=0})
+	if math.random(0,20) == 20 then
+		self.powered = true
+		self.object:set_properties({textures = {"creeper_powered.png"}})
+	else
+		self.powered = false
+	end
 end
 
 def.on_step = function(self, dtime)
 	if self.knockback then
 		return
 	end
+	
 	local ANIM_STAND = 1
 	local ANIM_WALK  = 2
 	
 	local pos = self.object:getpos()
+	local yaw = self.object:getyaw()
 	local inside = minetest.get_objects_inside_radius(pos,10)
 	local walk_speed = self.walk_speed
 	local animation = self.animation
 	local anim_speed = self.animation_speed
+	local velocity = self.object:getvelocity()
 	
 	self.timer = self.timer+0.01
 	self.turn_timer = self.turn_timer+0.01
+	self.jump_timer = self.jump_timer+0.01
 	
-	if not self.chase and self.timer > math.random(2,5) then
+	if not self.chase
+	and self.timer > math.random(2,5) then
 		if math.random() > 0.8 then
 			self.state = "stand"
-		elseif self.object:getvelocity().y ~= 0 then
-			self.state = "walk"
 		else
 			self.state = "walk"
 		end
 		self.timer = 0
-	end
-
-	if self.yaw > 6 then
-		self.yaw = 0
-	elseif self.yaw < 0 then
-		self.yaw = 6
 	end
 
 	if self.turn == "right" then
@@ -106,52 +151,38 @@ def.on_step = function(self, dtime)
 	end
 
 	if self.state == "stand" then
-		if self.turn_timer > math.random(2,5) then
-			local random = math.random(1,3)
-			if random == 1 then
-				self.turn = "left"
-			elseif random == 2 then
-				self.turn = "right"
-			else
-				self.turn = "straight"
-			end
-			self.turn_timer = 0
-			self.turn_speed = 0.05*math.random()
-		end
-		self.object:setvelocity({x=0,y=self.object:getvelocity().y,z=0})
 		if self.anim ~= ANIM_STAND then
 			self.object:set_animation({x=animation.stand_START,y=animation.stand_END},anim_speed,0)
 			self.anim = ANIM_STAND
 		end
+		
+		random_turn(self)
+		
+		if velocity.x ~= 0
+		or velocity.z ~= 0 then
+			self.object:setvelocity({x=0,y=velocity.y,z=0})
+		end
 	end
 
 	if self.state == "walk" then
-		self.direction = {x = math.sin(self.object:getyaw())*-1, y = -10, z = math.cos(self.object:getyaw())}
-		if self.direction ~= nil then
-			self.object:setvelocity({x=self.direction.x*walk_speed,y=self.object:getvelocity().y,z=self.direction.z*walk_speed})
-		end
-		if self.turn_timer > math.random(2,5) then
-			local select_turn = math.random(1,3)
-			if select_turn == 1 then
-				self.turn = "left"
-			elseif select_turn == 2 then
-				self.turn = "right"
-			elseif select_turn == 3 then
-				self.turn = "straight"
-			end
-			self.turn_timer = 0
-			self.turn_speed = 0.05 * math.random()
-		end
 		if self.anim ~= ANIM_WALK then
 			self.object:set_animation({x=animation.walk_START,y=animation.walk_END},anim_speed,0)
 			self.anim = ANIM_WALK
 		end
+		
+		self.direction = {x=math.sin(yaw)*-1,y=-10,z=math.cos(yaw)}
+		if self.direction then
+			self.object:setvelocity({x=self.direction.x*walk_speed,y=velocity.y,z=self.direction.z*walk_speed})
+		end
+		
+		random_turn(self)
 
-		local speed = self.object:getvelocity()
+		local velocity = self.object:getvelocity()
+		
 		if self.turn_timer > 1 then
 			local direction = self.direction
 			local npos = {x=pos.x+direction.x,y=pos.y+0.2,z=pos.z+direction.z}
-			if speed.x == 0 or speed.z == 0
+			if velocity.x == 0 or velocity.z == 0
 			or minetest.registered_nodes[minetest.get_node(npos).name].walkable then
 				local select_turn = math.random(1,2)
 				if select_turn == 1 then
@@ -163,102 +194,81 @@ def.on_step = function(self, dtime)
 				self.turn_speed = 0.05*math.random()
 			end
 		end
+		
 		-- Jump
-		if self.direction ~= nil then
-			local direction = self.direction
-			local velocity = self.object:getvelocity()
-			local spos = {x=pos.x+direction.x,y=pos.y,z=pos.z+direction.z}
-			local node = minetest.get_node_or_nil(spos)
-			spos.y = spos.y+1
-			local node2 = minetest.get_node_or_nil(spos)
-			local def,def2 = {}
-			if node and node.name then
-				def = minetest.registered_items[node.name]
-			end
-			if node2 and node2.name then
-				def2 = minetest.registered_items[node2.name]
-			end
-			if def and def.walkable
-			and def2 and not def2.walkable
-			and def.drawtype ~= "fencelike" then
-				self.object:setvelocity({
-					x=velocity.x*2.2,
-					y=self.jump_height,
-					z=velocity.z*2.2
-				})
-			end
+		if self.jump_timer > 0.2 then
+			jump(self,pos,self.direction)
 		end
 	end
+	
 	if self.state == "chase" then
-		local inside_2 = minetest.get_objects_inside_radius(pos,2)
-		
-		self.turn = "straight"
 		if self.anim ~= ANIM_WALK then
 			self.object:set_animation({x=animation.walk_START,y=animation.walk_END},anim_speed,0)
 			self.anim = ANIM_WALK
 		end
-		for  _,object in ipairs(inside_2) do
-			if object:is_player() and object:get_hp() ~= 0 then
-				self.chase = true
-				if self.visualx >= 2 then
-					self.object:remove()
-					creeper.boom(pos)
-					minetest.sound_play("creeper_explode",{pos=pos,gain=1.5,max_hear_distance=2*64})
-				end
-			end
-		end
-		for  _,object in ipairs(inside) do
-			if object:is_player() and object:get_hp() ~= 0 then
-				local velocity = self.object:getvelocity()
-				
-				for _,object in ipairs(inside_2) do
-					if object:is_player() then
-						self.object:setvelocity({x=0,y=velocity.y,z=0})
-						if self.anim ~= ANIM_STAND then
-							self.object:set_animation({x=animation.stand_START,y=animation.stand_END},anim_speed,0)
-							self.anim = ANIM_STAND
-						end
-						return
+		
+		self.turn = "straight"
+		
+		local inside_2 = minetest.get_objects_inside_radius(pos,2)
+		
+		-- Boom
+		if #inside_2 ~= 0 then
+			for  _,object in ipairs(inside_2) do
+				if object:is_player() and object:get_hp() ~= 0 then
+					self.chase = true
+					if self.visualx >= 2 then
+						self.object:remove()
+						creeper.boom(pos,self.powered)
+						minetest.sound_play("creeper_explode",{pos=pos,gain=1.5,max_hear_distance=2*64})
 					end
 				end
-				local ppos = object:getpos()
-				self.vec = {x=ppos.x-pos.x,y=ppos.y-pos.y,z=ppos.z-pos.z}
-				self.yaw = math.atan(self.vec.z/self.vec.x)+math.pi^2
-				if ppos.x > pos.x then
-					self.yaw = self.yaw+math.pi
-				end
-				self.yaw = self.yaw-2
-				self.object:setyaw(self.yaw)
-				self.direction = {x=math.sin(self.yaw)*-1,y=0,z=math.cos(self.yaw)}
-				
-				local direction = self.direction
-				self.object:setvelocity({x=direction.x*2.5,y=velocity.y,z=direction.z*2.5})
-
-				-- Jump
-				local spos = {x=pos.x+direction.x,y=pos.y,z=pos.z+direction.z}
-				local node = minetest.get_node_or_nil(spos)
-				spos.y = spos.y+1
-				local node2 = minetest.get_node_or_nil(spos)
-				local def,def2 = {}
-				if node and node.name then
-					def = minetest.registered_items[node.name]
-				end
-				if node2 and node2.name then
-					def2 = minetest.registered_items[node2.name]
-				end
-				if def and def.walkable
-				and def2 and not def2.walkable
-				and def.drawtype ~= "fencelike" then
-					self.object:setvelocity({
-						x=velocity.x*2.2,
-						y=self.jump_height,
-						z=velocity.z*2.2
-					})
-				end
 			end
 		end
+		
+		if #inside ~= 0 then
+			for  _,object in ipairs(inside) do
+				if object:is_player() and object:get_hp() ~= 0 then
+					if #inside_2 ~= 0 then
+						for _,object in ipairs(inside_2) do
+							-- Stop move
+							if object:is_player() then
+								if self.anim ~= ANIM_STAND then
+									self.object:set_animation({x=animation.stand_START,y=animation.stand_END},anim_speed,0)
+									self.anim = ANIM_STAND
+								end
+								self.object:setvelocity({x=0,y=velocity.y,z=0})
+								return
+							end
+						end
+					end
+				
+					local ppos = object:getpos()
+					self.vec = {x=ppos.x-pos.x,y=ppos.y-pos.y,z=ppos.z-pos.z}
+					self.yaw = math.atan(self.vec.z/self.vec.x)+math.pi^2
+					if ppos.x > pos.x then
+						self.yaw = self.yaw+math.pi
+					end
+					self.yaw = self.yaw-2
+					self.object:setyaw(self.yaw)
+					self.direction = {x=math.sin(self.yaw)*-1,y=0,z=math.cos(self.yaw)}
+				
+					local direction = self.direction
+					self.object:setvelocity({x=direction.x*2.5,y=velocity.y,z=direction.z*2.5})
+
+					-- Jump
+					if self.jump_timer > 0.2 then
+						jump(self,pos,direction)
+					end
+				end
+			end
+		else
+			self.state = "stand"
+		end
 	end
-	if minetest.get_item_group(minetest.get_node(pos).name,"water") ~= 0 then
+	
+	-- Swim
+	local node = minetest.get_node(pos)
+	if minetest.get_item_group(node.name,"water") ~= 0 then
 		self.object:setacceleration({x=0,y=1,z=0})
 		local velocity = self.object:getvelocity()
 		if self.object:getvelocity().y > 5 then
@@ -271,7 +281,7 @@ def.on_step = function(self, dtime)
 	end
 end
 
-def.on_punch = function(self, puncher, tflp, tool_capabilities, dir)
+def.on_punch = function(self,puncher,time_from_last_punch,tool_capabilities,dir)
 	if self.knockback == false then
 		local knockback_level = self.knockback_level
 		self.object:setvelocity({x=dir.x*knockback_level,y=3,z=dir.z*knockback_level})
@@ -281,7 +291,6 @@ def.on_punch = function(self, puncher, tflp, tool_capabilities, dir)
 		end)
 	end
 	if self.object:get_hp() < 1 then
-		local dir = self.direction
 		local pos = self.object:getpos()
 		local x = 1/math.random(1,5)*dir.x
 		local z = 1/math.random(1,5)*dir.z
