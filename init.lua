@@ -10,8 +10,7 @@ local def = {
 	visual = "mesh",
 	mesh = "character.b3d",
 	textures = {"creeper.png"},
-	makes_footstep_sound = true,
-	automatic_rotate = true,
+	makes_footstep_sound = false,
 
 	-- Original
 	animation = {
@@ -51,7 +50,7 @@ def.on_step = function(self, dtime)
 	local inside = minetest.get_objects_inside_radius(pos,10)
 	local walk_speed = self.walk_speed
 	local animation = self.animation
-	local anim_speed = animation_speed
+	local anim_speed = self.animation_speed
 	
 	self.timer = self.timer+0.01
 	self.turn_timer = self.turn_timer+0.01
@@ -280,6 +279,18 @@ def.on_punch = function(self, puncher, tflp, tool_capabilities, dir)
 		minetest.after(0.6,function()
 			self.knockback = false
 		end)
+	end
+	if self.object:get_hp() < 1 then
+		local dir = self.direction
+		local pos = self.object:getpos()
+		local x = 1/math.random(1,5)*dir.x
+		local z = 1/math.random(1,5)*dir.z
+		local p = {x=pos.x+x,y=pos.y,z=pos.z+z}
+		local node = minetest.get_node_or_nil(p)
+		if node == nil or not node.name or node.name ~= "air" then
+			p = pos
+		end
+		local obj = minetest.add_item(p, {name="tnt:gunpowder",count=math.random(0,2)})
 	end
 end
 
