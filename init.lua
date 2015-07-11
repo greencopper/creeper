@@ -26,7 +26,7 @@ local function jump(self,pos,direction)
 		})
 	end
 	if minetest.registered_nodes[minetest.get_node(pos).name].climbable then
-		self.object:setvelocity({x=velocity.x,y=3,z=velocity.z})
+		self.object:setvelocity({x=velocity.x,y=4,z=velocity.z})
 	end
 end
 
